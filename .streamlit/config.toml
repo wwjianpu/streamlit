@@ -1,0 +1,5 @@
+[theme]
+primaryColor="purple"
+backgroundColor="lightgray"
+font="sans serif"
+#base="dark"
