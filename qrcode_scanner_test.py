@@ -45,7 +45,11 @@ def main():
                 "frameRate": {"ideal": frame_rate}, 
                 "width": 640 },            
             "audio": False, },
-            async_processing=True)
+            async_processing=True,
+            # rtc_configuration={  # Add this line
+            #     "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+            #     },
+    )
     
     if 'start_time' not in st.session_state:
         st.session_state['start_time'] = datetime.now().strftime("%H:%M:%S")
@@ -53,12 +57,27 @@ def main():
     if 'cap' not in st.session_state:
         st.session_state['cap'] = False
     
+    if 'qrcode_value' not in st.session_state:
+        st.session_state['qrcode_value'] = ""
     
-    clicked = st.button("capture", key="btn_cap")
-    if clicked:
+    
+    cap_clicked = st.button("capture", key="btn_cap")
+    if cap_clicked:
         if ctx.video_processor:
             st.session_state.cap = True
             ctx.video_processor.captured = False
+
+    time_limit = st.number_input("time limit for capturing", min_value=1, max_value=300,value=20)
+    time_limit = time_limit * 10
+
+    # not work when while loop is running
+    stop_clicked = st.button("stop capture", key="btn_stop")
+    if stop_clicked:
+        if ctx.video_processor:
+            st.session_state.cap = False
+            ctx.video_processor.captured = False
+
+
 
     status = st.empty()
     status.write(st.session_state.start_time)
@@ -68,19 +87,29 @@ def main():
         ctx.video_processor.startcapture = st.session_state.cap
         st.session_state['start_time'] = datetime.now().strftime("%H:%M:%S")
 
-        status.write(st.session_state['start_time'] + " capturing : " + str(st.session_state.cap))
+        status.write(st.session_state['start_time'] + " capturing " + str(st.session_state.cap))
 
-
+    ##obj = st.sidebar.checkbox('Capture')
+    
+    c = 0
     while st.session_state.cap:
-        time.sleep(0.2)
-        if ctx.video_processor:
-            print(datetime.now().strftime("%H:%M:%S"), ctx.video_processor.value)
+        time.sleep(0.1)
+        c = c + 1
+        if ctx.video_processor and c < time_limit:
+            # print(datetime.now().strftime("%H:%M:%S"), ctx.video_processor.value, c)
+            status.write(st.session_state['start_time'] + " - capturing - " + str(time_limit - c))
             if ctx.video_processor.captured:
                 
-                status.write(st.session_state['start_time'] + " - " + datetime.now().strftime("%H:%M:%S") + " capturing: False")
-                output.write(ctx.video_processor.value)
+                status.write(st.session_state['start_time'] + " - captured - " + str(time_limit - c))
+                
+                st.session_state.qrcode_value = ctx.video_processor.value
+                output.write(st.session_state.qrcode_value)
+                ctx.video_processor.value = ""
                 
                 st.session_state.cap = False
+        elif c == time_limit:
+            status.write(st.session_state['start_time'] + " - " + datetime.now().strftime("%H:%M:%S") + " capturing: timeout")
+            st.session_state.cap = False
         else:
             break
     
