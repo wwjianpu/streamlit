@@ -3,3 +3,4 @@ streamlit==1.7.0
 streamlit-webrtc==0.35.2
 gsheetsdb==0.1.13.1
 qrcode==7.3.1
+opencv-python-headless==4.5.5.64
