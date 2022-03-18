@@ -45,10 +45,10 @@ def main():
                 "frameRate": {"ideal": frame_rate}, 
                 "width": 640 },            
             "audio": False, },
-            async_processing=True,
-            # rtc_configuration={  # Add this line
-            #     "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-            #     },
+        #async_processing=True,
+        rtc_configuration={  # Add this line
+            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+            },
     )
     
     if 'start_time' not in st.session_state:
