@@ -13,6 +13,11 @@ def run_query(query):
     rows = conn.execute(query, headers=1)
     return rows
 
+''' the url is keep in secrets.toml under ./.streamlit folder (e.g. ./.streamlit/secrets.toml) 
+[url]
+public_gsheets_url_bed_loc_map = "https://docs.google.com/spreadsheets/d/xxxxxxxxxxxxxxx/edit?usp=sharing"
+'''
+
 sheet_url = st.secrets["url"]["public_gsheets_url_bed_loc_map"]
 rows = run_query(f'SELECT * FROM "{sheet_url}"')
 
