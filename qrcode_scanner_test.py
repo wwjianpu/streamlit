@@ -43,7 +43,7 @@ def main():
         media_stream_constraints={
             "video": {
                 "frameRate": {"ideal": frame_rate}, 
-                "width": 640 },            
+                "width": {"min": 800, "ideal": 1280, "max": 1920 }, },            
             "audio": False, },
         #async_processing=True,
         rtc_configuration={  # Add this line
