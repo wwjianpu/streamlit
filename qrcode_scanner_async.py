@@ -1,7 +1,5 @@
 from datetime import datetime
-from select import select
 import time
-from matplotlib import container
 import streamlit as st
 import numpy as np
 from streamlit_webrtc import RTCConfiguration, VideoProcessorBase, webrtc_streamer, WebRtcMode
