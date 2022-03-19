@@ -4,14 +4,17 @@ import time
 from matplotlib import container
 import streamlit as st
 import numpy as np
-from streamlit_webrtc import webrtc_streamer
+from streamlit_webrtc import RTCConfiguration, VideoProcessorBase, webrtc_streamer, WebRtcMode
 import av
 import cv2
+from typing import List, NamedTuple
+
+RTC_CONFIGURATION = RTCConfiguration(
+    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+)
 
 def main():
-
-
-    class VideoProcessor:
+    class VideoProcessor(VideoProcessorBase):
 
         def __init__(self) -> None:
             self.d = cv2.QRCodeDetector()
@@ -19,37 +22,45 @@ def main():
             self.captured = False
             self.value = ""
 
-        def recv(self, frame): 
-            
-            img = frame.to_ndarray(format="bgr24")
-            val, points = self.d.detect(img)
+        async def recv_queued(self, frames: List[av.AudioFrame]) -> List[av.VideoFrame]: 
 
-            if val:
-                img = cv2.polylines(img, [points.astype(int)], True, (0,255,0), 2)
+            rtn_frames = []
 
-                if self.startcapture:
-                    qrcode_val, points, straight_qrcode = self.d.detectAndDecode(img)
-                    if (qrcode_val):
-                        self.value = qrcode_val
-                        self.startcapture = False
-                        self.captured = True
-                        print("capture OFF ", qrcode_val)
+            for frame in frames:
+                img = frame.to_ndarray(format="bgr24")
+                val, points = self.d.detect(img)
 
-            return av.VideoFrame.from_ndarray(img, format="bgr24")
+                if val:
+                    img = cv2.polylines(img, [points.astype(int)], True, (0,255,0), 2)
+
+                    if self.startcapture:
+                        qrcode_val, points, straight_qrcode = self.d.detectAndDecode(img)
+                        if (qrcode_val):
+                            self.value = qrcode_val
+                            self.startcapture = False
+                            self.captured = True
+                            #print("capture OFF ", qrcode_val)
+
+                # get single frame for return only
+                rtn_frames.append(av.VideoFrame.from_ndarray(img, format="bgr24"))
+                break
+
+            return rtn_frames
 
 
 
     frame_rate = 10
-    ctx = webrtc_streamer(key="scanner", video_processor_factory=VideoProcessor, 
+    ctx = webrtc_streamer(
+        key="scanner", 
+        mode=WebRtcMode.SENDRECV,
+        video_processor_factory=VideoProcessor, 
         media_stream_constraints={
             "video": {
                 "frameRate": {"ideal": frame_rate, "max": 15}, 
                 "width": {"min": 800, "ideal": 1280, "max": 1920 }, },            
             "audio": False, },
-        #async_processing=True,
-        rtc_configuration={  # Add this line
-            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-            },
+        rtc_configuration=RTC_CONFIGURATION, 
+        async_processing=True,
     )
     
     if 'start_time' not in st.session_state:
