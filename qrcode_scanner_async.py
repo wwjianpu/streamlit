@@ -5,7 +5,7 @@ import numpy as np
 from streamlit_webrtc import RTCConfiguration, VideoProcessorBase, webrtc_streamer, WebRtcMode
 import av
 import cv2
-from typing import List, NamedTuple
+from typing import List
 
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
@@ -94,7 +94,7 @@ def main():
                 "frameRate": {"ideal": frame_rate, "max": 15}, 
                 "width": {"min": 800, "ideal": 1280, "max": 1920 }, },            
             "audio": False, },
-        #rtc_configuration=RTC_CONFIGURATION, 
+        rtc_configuration=RTC_CONFIGURATION, # comment this line for local machine testing
         async_processing=True,
     )
     
