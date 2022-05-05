@@ -79,7 +79,7 @@ with st.container():
     if st.button('API2', disabled=(api_url=='')):
         res = requests.get(url=api_url, headers=api_call_headers, verify=False, params=params)
         
-        print("GET", api3_url, res.status_code, res.text)
+        print("GET", api_url, res.status_code, res.text)
 
         st.write(res.status_code, res.text)
     
