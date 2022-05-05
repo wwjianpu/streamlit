@@ -20,7 +20,7 @@ with st.container():
     with c2:
         client_id = st.text_input('client_id', '')
     with c3:
-        client_secret = st.text_input('client_secret', '')
+        client_secret = st.text_input('client_secret', '', type="password")
 
     if token_url == "": 
         if "token_url" in st.secrets['apiurl']: token_url = st.secrets['apiurl']['token_url']
