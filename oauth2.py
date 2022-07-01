@@ -1,3 +1,8 @@
+from cv2 import DFT_SCALE
+from importlib_metadata import files
+from matplotlib.font_manager import json_dump
+import pandas as pd
+from datetime import datetime
 from requests import request
 from rsa import verify
 import secrets
@@ -9,6 +14,7 @@ if 'refresh_token' not in st.session_state: st.session_state['refresh_token'] = 
 if 'access_token_response' not in st.session_state: st.session_state['access_token_response'] = ''
 if 'token' not in st.session_state: st.session_state['token'] = ''
 if 'pdf_file' not in st.session_state: st.session_state['pdf_file'] = None
+if 'docId' not in st.session_state: st.session_state['docId'] = ''
 
 st.header('Get Token')
 with st.container():
@@ -65,23 +71,90 @@ with st.container():
         if "api_url" in st.secrets['apiurl']:
             api_url = st.secrets['apiurl']['api_url']
 
+    woundsData = {
+        'uid': ['76212', '76213'],
+        'etiology': ['Pressure Injury', 'Surgical'],
+        'loc': ['Sacrum/Buttock', 'Left Lower leg'],
+        'onsetDate': ['2022-05-20', '2022-01-16']
+    }
+    
+    dfw = pd.DataFrame(woundsData)
+    dfwInfos = pd.DataFrame()
+
+
+    woundChoice = ['All']
+    woundChoice.extend(dfw.uid)
+
     c1, c2, c3 = st.columns(3)
     with c1:
+        patHospCode = st.text_input('Pat Hosp Code', 'QMH')
+        caseNum = st.text_input('Case No.', 'HN15000186X')
         docType = st.text_input('docType', 'woundAxRpt')
     with c2:
-        patHospCode = st.text_input('Pat Hosp Code', 'QMH')
+        docDateType = st.selectbox('Date range type', ('ADR', 'PFW', 'SDR'))
+        if (docDateType=='SDR'):
+            docStartDate = st.date_input('start date')
+            docEndDate = st.date_input('end date')
+        else:
+            docStartDate = ''
+            docEndDate = ''
     with c3:
-        caseNum = st.text_input('Case No.', 'HN15000186X')
+        # woundInfos = st.multiselect('select wound', ['All', 'wound 1', 'wound2'])
+        woundSelected = st.multiselect('select wound', woundChoice)
+
+    if 'All' in woundSelected:
+        dfwInfos = dfw
+    else:
+        for id in woundSelected:
+            dfwInfos = dfwInfos.append(dfw[dfw.uid == id])
+
+    woundInfos = json.loads(dfwInfos.to_json(orient="records"))
+
+    data = {
+        'patHospCode': patHospCode,
+        'caseNum': caseNum,
+        'docType': docType,
+        'docDateType': docDateType,
+        'woundInfos': woundInfos
+    }
+    date_format='%Y-%m-%d'
+    if (docDateType=='SDR'):
+        data['docStartDate'] = docStartDate.strftime(date_format)
+        data['docEndDate'] = docEndDate.strftime(date_format)
+
+    
+    # data = json.dumps(data)
 
     api_call_headers = {'Authorization': 'Bearer ' + st.session_state['token']}
-    params = {'docType': docType, 'patHospCode': patHospCode, 'caseNum': caseNum}
 
     if st.button('API2', disabled=(api_url=='')):
-        res = requests.get(url=api_url, headers=api_call_headers, verify=False, params=params)
         
-        print("GET", api_url, res.status_code, res.text)
+        print("BODY: ", data)
 
-        st.write(res.status_code, res.text)
+        # headers = req.headers
+        # data, json = req.body
+        # parms = req.query
+        # files (file-tuple )= {'parmName': ('filename', file-like-object, minetype) }
+
+        # res = requests.get(url=api_url, headers=api_call_headers, verify=False, params=params)
+        # user data parm for Node
+        # use json parm type for AWS
+        get_doc_id_res = requests.post(url=api_url, headers=api_call_headers, verify=False, json=data)
+        
+        
+        print("POST", api_url, get_doc_id_res.status_code, get_doc_id_res.text)
+        # print(get_doc_id_res.headers)
+        st.session_state['get_doc_id_res'] = json.loads(get_doc_id_res.text)
+
+        if "error" in st.session_state['get_doc_id_res']:
+            # st.error(st.session_state['get_doc_id_res']['message'])
+            st.error('failed')
+        else:
+            if get_doc_id_res.status_code == 201:
+                st.session_state['patientPseudoId'] = st.session_state['get_doc_id_res']['patientPseudoId']
+                st.session_state['docId'] = st.session_state['get_doc_id_res']['docId']
+
+        st.write(get_doc_id_res.status_code, get_doc_id_res.text)
     
 st.header('API 3')
 with st.container():
@@ -90,15 +163,38 @@ with st.container():
         if "api3_url" in st.secrets['apiurl']:
             api3_url = st.secrets['apiurl']['api3_url']
     
+    docId = st.text_input('manual assign docId')
+    if docId == "":
+        if st.session_state['docId'] == "":
+            st.warning('doc Id not available. Aborted!')
+        else:
+            docId = st.session_state['docId']
+
+
     pdf_file = st.file_uploader('select pdf file', 'pdf')
     if pdf_file is not None:
         st.session_state['pdf_file'] = pdf_file
         
-    if st.button('API3', disabled=(api3_url=='' or pdf_file is None)):
+    if st.button('API3', disabled=(api3_url=='' or pdf_file is None or docId=='')):
         bytes_data = st.session_state['pdf_file'].getvalue()
         api_call_headers = {'Authorization': 'Bearer ' + st.session_state['token']}
+        params = { 'docId': docId }
 
-        res = requests.post(url=api3_url, headers=api_call_headers, verify=False, data=bytes_data)
+        file = {
+            'file': ('myfile.pdf', bytes_data, 'application/pdf')
+        }
+
+        res = requests.post(url=api3_url, headers=api_call_headers, verify=False, params=params, files=file) # unexpected field
+
+        # file = {
+        #     'form': bytes_data
+        # }
+
+        # res = requests.post(url=api3_url, headers=api_call_headers, verify=False, params=params, data=bytes_data) #File is missing
+        # res = requests.post(url=api3_url, headers=api_call_headers, verify=False, params=params, data=file) # Internal server error
+        # res = requests.post(url=api3_url, headers=api_call_headers, verify=False, params=params, files=file) # unexpected field
+
+        print(res.url)
         print("POST", api3_url, res.status_code, res.text)
 
         st.write(res.status_code, res.text)
