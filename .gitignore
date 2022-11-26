@@ -1,3 +1,5 @@
 .streamlit/secrets.toml
 
 googleSheet.*.pyc
+
+streamlit-playground.code-workspace
