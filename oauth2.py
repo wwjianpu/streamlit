@@ -1,9 +1,6 @@
 from cv2 import DFT_SCALE
-from importlib_metadata import files
-from matplotlib.font_manager import json_dump
 import pandas as pd
 from datetime import datetime
-from requests import request
 from rsa import verify
 import secrets
 from locale import str
@@ -181,7 +178,7 @@ with st.container():
         params = { 'docId': docId }
 
         file = {
-            'file': ('myfile.pdf', bytes_data, 'application/pdf')
+            'file': (st.session_state['pdf_file'].name, bytes_data, 'application/pdf')
         }
 
         res = requests.post(url=api3_url, headers=api_call_headers, verify=False, params=params, files=file) # unexpected field
