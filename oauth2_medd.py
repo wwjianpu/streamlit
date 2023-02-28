@@ -29,7 +29,8 @@ with st.container():
         client_secret = st.text_input('client_secret', '', type="password")
 
     if token_url == "": 
-        if "token_url" in st.secrets['apiurl']: token_url = st.secrets['apiurl']['token_url']
+        if "token_url" in st.secrets['apiurl']: 
+            token_url = st.secrets['apiurl']['token_url']
     if scope == "":
         if "scope" in st.secrets['apiurl']: scope = st.secrets['apiurl']['scope']
     if client_id == "":
