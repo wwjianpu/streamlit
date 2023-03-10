@@ -29,8 +29,7 @@ with st.container():
         client_secret = st.text_input('client_secret', '', type="password")
 
     if token_url == "": 
-        if "token_url" in st.secrets['apiurl']: 
-            token_url = st.secrets['apiurl']['token_url']
+        if "token_url" in st.secrets['apiurl']: token_url = st.secrets['apiurl']['token_url']
     if scope == "":
         if "scope" in st.secrets['apiurl']: scope = st.secrets['apiurl']['scope']
     if client_id == "":
@@ -90,7 +89,10 @@ def route_push_call(api_url, api_call_headers, payload):
     else:
         if push_res.status_code == 200 or push_res.status_code == 201:
             if st.session_state['push_response']['return_code'] == "0000":
-                st.success("{0} - {1}".format(push_res.status_code, st.session_state['push_response']['return_msg']))
+                st.success("{0} - {1} - {2}".format(
+                    push_res.status_code, 
+                    st.session_state['push_response']['return_code'],
+                    st.session_state['push_response']['return_msg']))
             else:
                 st.warning("{0} - {1} - {2}".format(
                     push_res.status_code, 
