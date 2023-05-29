@@ -3,3 +3,8 @@
 #backgroundColor="lightgray"
 #font="sans serif"
 #base="dark"
+
+[server]
+port=8501
+address="0.0.0.0"
+headless=true
