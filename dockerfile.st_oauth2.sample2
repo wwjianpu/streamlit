@@ -1,0 +1,31 @@
+### to build docker image
+# docker build -f dockerfiles/dockerfile.st_oauth2 -t st_oauth2 .
+
+FROM python:3.10.11-slim
+ENV APPDIR=/app
+WORKDIR ${APPDIR}
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+# use local app source
+ADD oauth2.py ${APPDIR}/
+ADD requirements.txt ${APPDIR}/
+COPY .streamlit/config.toml ${APPDIR}/.streamlit/
+COPY .streamlit/secrets.toml.sample ${APPDIR}/.streamlit/secrets.toml
+
+# install streamlit & other libraries
+RUN pip install -r requirements.txt
+
+# enable mounting .streamlit folder which contains config.toml & secrets.toml to docker 
+VOLUME ${APPDIR}/.streamlit
+
+EXPOSE 8501
+
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+
+ENTRYPOINT ["streamlit", "run", "oauth2.py"]
+

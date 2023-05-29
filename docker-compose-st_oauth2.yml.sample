@@ -1,0 +1,15 @@
+version: "3"
+services:
+  st_oauth2:
+    image: st_oauth2
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
+      interval: 10m
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    ports:
+      - 8501:8501
+    volumes:
+      - <host path of .streamlit>:/app/.streamlit
+  
